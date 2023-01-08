@@ -1,37 +1,22 @@
-use teloxide::{prelude::*, utils::command::BotCommands};
+use frankenstein::Api;
+use frankenstein::TelegramApi;
 
-#[tokio::main]
-async fn main() {
-    pretty_env_logger::init();
-    log::info!("Starting command bot...");
+static TOKEN: &str = "5613891155:AAEgh3uQZtEJyuDAtzc8UC8fIea0JmqHk0g";
 
-    let bot = Bot::from_env();
+fn main() {
+    let api = Api::new(TOKEN);
 
-    Command::repl(bot, answer).await;
-}
-
-#[derive(BotCommands, Clone)]
-#[command(rename_rule = "lowercase", description = "These commands are supported:")]
-enum Command {
-    #[command(description = "display this text.")]
-    Help,
-    #[command(description = "handle a username.")]
-    Username(String),
-    #[command(description = "handle a username and an age.", parse_with = "split")]
-    UsernameAndAge { username: String, age: u8 },
-}
-
-async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
-    match cmd {
-        Command::Help => bot.send_message(msg.chat.id, Command::descriptions().to_string()).await?,
-        Command::Username(username) => {
-            bot.send_message(msg.chat.id, format!("Your username is @{username}.")).await?
+    match api.get_me() {
+        Ok(response) => {
+            let user = response.result;
+            println!(
+                "Hello, I'm @{}, https://t.me/{}",
+                user.first_name,
+                user.username.expect("The bot must have a username.")
+            );
         }
-        Command::UsernameAndAge { username, age } => {
-            bot.send_message(msg.chat.id, format!("Your username is @{username} and age is {age}."))
-                .await?
+        Err(error) => {
+            eprintln!("Failed to get me: {error:?}");
         }
-    };
-
-    Ok(())
+    }
 }
